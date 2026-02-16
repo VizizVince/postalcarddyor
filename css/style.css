@@ -212,7 +212,8 @@ html, body {
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
   z-index: 10;
   will-change: transform;
-  animation: letterPulse 2s ease-in-out infinite;
+  /* La pulsation est désactivée car la rotation est pilotée par JS.
+     L'animation JS applique directement le transform. */
 }
 
 /* Cachet rouge en bas à droite de la lettre */
@@ -227,9 +228,39 @@ html, body {
   background-color: var(--accent);
 }
 
-@keyframes letterPulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.02); }
+/* Tampon supplémentaire — apparaît à ~30% du scroll via la classe .has-stamp
+   Petit rectangle gris simulant un tampon postal */
+#letter::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 14px;
+  height: 10px;
+  background-color: rgba(150, 150, 150, 0.5);
+  border: 0.5px solid rgba(150, 150, 150, 0.3);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Le tampon devient visible quand la classe .has-stamp est ajoutée */
+#letter.has-stamp::before {
+  opacity: 1;
+}
+
+/* Coin corné — apparaît à ~50% du scroll via la classe .has-fold
+   Triangle sombre dans le coin haut-droit simulant un pli */
+#letter.has-fold {
+  /* On utilise un gradient en coin pour simuler la corne.
+     Le triangle fait 10px dans le coin haut-droit. */
+  background-image: linear-gradient(
+    225deg,
+    rgba(30, 30, 30, 0.8) 0%,
+    rgba(30, 30, 30, 0.8) 7px,
+    transparent 7px
+  );
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 }
 
 /* Textes narratifs du voyage */
@@ -271,11 +302,50 @@ html, body {
   text-align: center;
 }
 
-/* Mobile — ajustements textes et lettre */
+/* ============================================
+   PHASE 2 — POINTS LUMINEUX (relais morse)
+   ============================================ */
+
+/* Point lumineux — cercle 2px, blanc, opacité 0.3
+   Positionné en absolu, z-index au-dessus du canvas mais sous la lettre */
+.light-point {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--letter);
+  opacity: 0.3;
+  z-index: 8;
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* Centrer le point sur sa position */
+  transform: translate(-50%, -50%);
+}
+
+/* ============================================
+   PHASE 2 — RESPONSIVE (mobile)
+   ============================================ */
+
 @media (max-width: 767px) {
   #letter {
     width: 60px;
     height: 40px;
+  }
+
+  /* Tampon plus petit sur mobile */
+  #letter::before {
+    width: 10px;
+    height: 7px;
+    top: 4px;
+    left: 4px;
+  }
+
+  /* Cachet plus petit sur mobile */
+  #letter::after {
+    width: 6px;
+    height: 6px;
+    bottom: 4px;
+    right: 4px;
   }
 
   #journey-texts .journey-text {
