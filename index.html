@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>MANDRAGORA — Jugo De Diamantes</title>
+
+  <!-- Google Fonts : Playfair Display, Space Mono, Caveat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+
+  <!-- Lenis (smooth scroll) -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js" defer></script>
+
+  <!-- Config (AVANT les autres scripts) -->
+  <script src="config.js" defer></script>
+
+  <!-- Scripts applicatifs (dans l'ordre : i18n, audio, form, app) -->
+  <script src="js/i18n.js" defer></script>
+  <script src="js/audio.js" defer></script>
+  <script src="js/form.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+
+  <!-- Toggle langue (fixe, haut gauche) -->
+  <button id="lang-toggle"></button>
+
+  <!-- Toggle audio (fixe, haut droite) -->
+  <button id="audio-toggle"></button>
+
+  <!-- Conteneur scroll (très haut pour piloter le scroll) -->
+  <div id="scroll-container">
+
+    <!-- Viewport sticky (tout le contenu visible) -->
+    <div id="viewport">
+
+      <!-- Phase 1 : Intro -->
+      <section id="phase-intro"></section>
+
+      <!-- Phase 2 : Voyage carte topo -->
+      <section id="phase-journey">
+        <canvas id="topo-canvas"></canvas>
+        <div id="letter"></div>
+        <div id="journey-texts"></div>
+      </section>
+
+      <!-- Phase 3 : Arrivée -->
+      <section id="phase-arrival">
+        <canvas id="topo-canvas-arrival"></canvas>
+        <div id="arrival-letter"></div>
+        <p id="arrival-text" data-i18n="arrivalLine"></p>
+      </section>
+
+      <!-- Phase 4 : Formulaire carte postale -->
+      <section id="phase-form">
+        <div id="postcard">
+          <div id="postcard-inner">
+            <!-- Face avant (design carte postale) -->
+            <div id="postcard-front">
+              <div id="postcard-front-art">
+                <span id="postcard-title">JUGO DE DIAMANTES</span>
+                <span id="postcard-artist">MANDRAGORA</span>
+              </div>
+              <div id="postcard-stamp"></div>
+            </div>
+            <!-- Face arrière (formulaire) -->
+            <div id="postcard-back">
+              <div id="postcard-line-divider"></div>
+              <div id="postcard-left">
+                <div id="postcard-message" data-i18n="arrivalLine"></div>
+              </div>
+              <div id="postcard-right">
+                <form id="postcard-form" autocomplete="off"></form>
+                <button id="submit-btn" type="button" data-i18n="submitButton"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Phase 5 : Confirmation -->
+      <section id="phase-confirmation">
+        <p id="confirmation-text" data-i18n="confirmationLine"></p>
+        <p id="tracking-number"></p>
+        <div id="confirmation-buttons">
+          <a id="presave-btn" href="#" target="_blank" rel="noopener noreferrer" data-i18n="presaveButtonText"></a>
+          <button id="share-btn" data-i18n="shareButtonText"></button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,772 @@
+/* ============================================
+   STYLE.CSS — MANDRAGORA "Jugo De Diamantes"
+   Feuille de styles principale du site
+   ============================================ */
+
+/* --- RESET MINIMAL --- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* --- VARIABLES CSS ---
+   Synchroniser avec config.js → CONFIG.colors et CONFIG.fonts
+   Si vous modifiez les couleurs dans config.js, mettez aussi à jour ici. */
+:root {
+  --bg: #0A0A0A;
+  --text: #E8E4DE;
+  --accent: #8B1A1A;
+  --letter: #FFFFFF;
+  --topo: #2A2A2A;
+  --topo-light: #3A3A3A;
+  --font-display: 'Playfair Display', serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-hand: 'Caveat', cursive;
+}
+
+/* --- BASE --- */
+html, body {
+  background-color: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  font-family: var(--font-mono);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- SCROLL CONTAINER ---
+   Rail de scroll très haut pour piloter les animations via ScrollTrigger */
+#scroll-container {
+  height: 500vh;
+}
+
+/* --- VIEWPORT STICKY ---
+   Reste collé en haut pendant que le scroll avance en-dessous */
+#viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* --- SECTIONS EMPILÉES ---
+   Toutes les phases sont empilées les unes sur les autres,
+   leur visibilité est contrôlée par JavaScript */
+#viewport > section {
+  position: absolute;
+  inset: 0;
+}
+
+/* --- GRAIN FILMIQUE ---
+   Overlay de bruit SVG couvrant tout le viewport, animé.
+   pointer-events: none pour ne pas bloquer les interactions */
+#viewport::after {
+  content: "";
+  position: absolute;
+  /* Dépassement négatif pour que le translate de l'animation ne montre pas les bords */
+  inset: -20%;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  animation: grain 0.5s steps(6) infinite;
+  will-change: transform;
+}
+
+/* Animation du grain — léger déplacement pour simuler du bruit vivant */
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -15%); }
+  40% { transform: translate(-5%, 15%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 10%); }
+  80% { transform: translate(3%, -15%); }
+  90% { transform: translate(-10%, 5%); }
+}
+
+/* --- CURSEUR CUSTOM (desktop uniquement) ---
+   Réticule rouge SVG. Ne s'applique pas sur mobile. */
+@media (hover: hover) {
+  body {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='2' x2='12' y2='10' stroke='%238B1A1A' stroke-width='1'/%3E%3Cline x1='12' y1='14' x2='12' y2='22' stroke='%238B1A1A' stroke-width='1'/%3E%3Cline x1='2' y1='12' x2='10' y2='12' stroke='%238B1A1A' stroke-width='1'/%3E%3Cline x1='14' y1='12' x2='22' y2='12' stroke='%238B1A1A' stroke-width='1'/%3E%3Ccircle cx='12' cy='12' r='3' fill='none' stroke='%238B1A1A' stroke-width='0.5'/%3E%3C/svg%3E") 12 12, crosshair;
+  }
+
+  /* Garder le curseur classique sur les éléments interactifs */
+  button, a, input, textarea, select, label {
+    cursor: pointer;
+  }
+
+  input, textarea {
+    cursor: text;
+  }
+}
+
+/* --- TOGGLES (langue et audio) ---
+   Positionnés en fixe, au-dessus de tout, style discret */
+#lang-toggle,
+#audio-toggle {
+  position: fixed;
+  z-index: 10000;
+  top: 20px;
+  background: none;
+  border: 1px solid var(--text);
+  border-radius: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+  touch-action: manipulation;
+}
+
+#lang-toggle:hover,
+#audio-toggle:hover {
+  opacity: 1;
+}
+
+/* Toggle langue — en haut à gauche */
+#lang-toggle {
+  left: 20px;
+}
+
+/* Toggle audio — en haut à droite */
+#audio-toggle {
+  right: 20px;
+}
+
+/* ============================================
+   PHASE 1 — INTRO (typewriter)
+   ============================================ */
+
+/* Section intro — centrée verticalement et horizontalement */
+#phase-intro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10%;
+}
+
+/* Conteneur du texte typewriter */
+#intro-text {
+  font-family: var(--font-mono);
+  font-size: clamp(16px, 3vw, 22px);
+  letter-spacing: 1px;
+  line-height: 1.6;
+  position: relative;
+  display: inline-block;
+}
+
+/* Chaque caractère du typewriter est un span inline */
+#intro-text .char {
+  opacity: 0;
+  display: inline-block;
+}
+
+/* Curseur clignotant à la fin du texte typewriter */
+#intro-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background-color: var(--text);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursorBlink 1s steps(1) infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ============================================
+   PHASE 2 — VOYAGE (styles de base, détaillés en Phase 2)
+   ============================================ */
+
+/* Canvas topographique — remplit tout le viewport */
+#topo-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lettre — centrée, au-dessus du canvas */
+#letter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 50px;
+  background-color: var(--letter);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  will-change: transform;
+  /* La pulsation est désactivée car la rotation est pilotée par JS.
+     L'animation JS applique directement le transform. */
+}
+
+/* Cachet rouge en bas à droite de la lettre */
+#letter::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+/* Tampon supplémentaire — apparaît à ~30% du scroll via la classe .has-stamp
+   Petit rectangle gris simulant un tampon postal */
+#letter::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 14px;
+  height: 10px;
+  background-color: rgba(150, 150, 150, 0.5);
+  border: 0.5px solid rgba(150, 150, 150, 0.3);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Le tampon devient visible quand la classe .has-stamp est ajoutée */
+#letter.has-stamp::before {
+  opacity: 1;
+}
+
+/* Coin corné — apparaît à ~50% du scroll via la classe .has-fold
+   Triangle sombre dans le coin haut-droit simulant un pli */
+#letter.has-fold {
+  /* On utilise un gradient en coin pour simuler la corne.
+     Le triangle fait 10px dans le coin haut-droit. */
+  background-image: linear-gradient(
+    225deg,
+    rgba(30, 30, 30, 0.8) 0%,
+    rgba(30, 30, 30, 0.8) 7px,
+    transparent 7px
+  );
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* Textes narratifs du voyage */
+#journey-texts {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+#journey-texts .journey-text {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text);
+  opacity: 0;
+  max-width: 300px;
+  line-height: 1.5;
+  /* Révélation horizontale (clip-path) — contrôlée par GSAP */
+  clip-path: inset(0 100% 0 0);
+}
+
+/* Positionnement varié des 3 textes narratifs */
+#journey-texts .journey-text:nth-child(1) {
+  left: 8%;
+  top: 30%;
+}
+
+#journey-texts .journey-text:nth-child(2) {
+  right: 8%;
+  top: 45%;
+  text-align: right;
+}
+
+#journey-texts .journey-text:nth-child(3) {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 65%;
+  text-align: center;
+}
+
+/* ============================================
+   PHASE 2 — POINTS LUMINEUX (relais morse)
+   ============================================ */
+
+/* Point lumineux — cercle 2px, blanc, opacité 0.3
+   Positionné en absolu, z-index au-dessus du canvas mais sous la lettre */
+.light-point {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--letter);
+  opacity: 0.3;
+  z-index: 8;
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* Centrer le point sur sa position */
+  transform: translate(-50%, -50%);
+}
+
+/* ============================================
+   PHASE 2 — RESPONSIVE (mobile)
+   ============================================ */
+
+@media (max-width: 767px) {
+  #letter {
+    width: 60px;
+    height: 40px;
+  }
+
+  /* Tampon plus petit sur mobile */
+  #letter::before {
+    width: 10px;
+    height: 7px;
+    top: 4px;
+    left: 4px;
+  }
+
+  /* Cachet plus petit sur mobile */
+  #letter::after {
+    width: 6px;
+    height: 6px;
+    bottom: 4px;
+    right: 4px;
+  }
+
+  #journey-texts .journey-text {
+    font-size: 12px;
+    max-width: 200px;
+  }
+}
+
+/* ============================================
+   PHASE 3 — ARRIVÉE
+   ============================================ */
+
+/* Canvas de fond pour la phase arrivée (continuité visuelle) */
+#topo-canvas-arrival {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lettre d'arrivée — commence petite, grandit via GSAP */
+#arrival-letter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 50px;
+  background-color: var(--letter);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  will-change: transform, width, height;
+}
+
+/* Cachet rouge sur la lettre d'arrivée */
+#arrival-letter::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+/* Texte d'arrivée */
+#arrival-text {
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: clamp(14px, 2.5vw, 18px);
+  letter-spacing: 1px;
+  color: var(--text);
+  opacity: 0;
+  text-align: center;
+  max-width: 80%;
+  z-index: 11;
+}
+
+/* ============================================
+   PHASE 4 — FORMULAIRE CARTE POSTALE
+   ============================================ */
+
+#phase-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+}
+
+/* Conteneur carte postale — perspective pour le flip 3D */
+#postcard {
+  width: min(90vw, 600px);
+  height: min(60vw, 380px);
+  position: relative;
+  z-index: 10;
+}
+
+/* Conteneur interne — fait le flip 3D */
+#postcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Quand la carte est retournée */
+#postcard.flipped #postcard-inner {
+  transform: rotateY(180deg);
+}
+
+/* Faces avant et arrière */
+#postcard-front,
+#postcard-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* --- FACE AVANT --- */
+#postcard-front {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+/* Art de la face avant */
+#postcard-front-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#postcard-title {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 4vw, 36px);
+  color: var(--text);
+  letter-spacing: 4px;
+  font-weight: 700;
+}
+
+#postcard-artist {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1.5vw, 13px);
+  color: var(--accent);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+/* Timbre en haut à droite de la face avant */
+#postcard-stamp {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 48px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.15);
+  background: repeating-conic-gradient(
+    var(--accent) 0% 25%,
+    transparent 0% 50%
+  ) 50% / 6px 6px;
+  opacity: 0.3;
+}
+
+/* --- FACE ARRIÈRE (formulaire) --- */
+#postcard-back {
+  background: #f5f0e8;
+  border: 1px solid #d4cfc5;
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: row;
+}
+
+/* Ligne verticale centrale (séparateur classique carte postale) */
+#postcard-line-divider {
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: 50%;
+  width: 1px;
+  background-color: #c0b8a8;
+}
+
+/* Moitié gauche — message décoratif */
+#postcard-left {
+  width: 50%;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#postcard-message {
+  font-family: var(--font-hand);
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: #2a2a2a;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Moitié droite — formulaire + bouton */
+#postcard-right {
+  width: 50%;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Champ du formulaire — style lignes manuscrites */
+#postcard-form .form-field {
+  position: relative;
+  margin-bottom: 2px;
+}
+
+#postcard-form .form-field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 1px;
+}
+
+#postcard-form .form-field input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #c0b8a8;
+  background: transparent;
+  font-family: var(--font-hand);
+  font-size: clamp(14px, 2vw, 18px);
+  color: #1a1a1a;
+  padding: 4px 0;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#postcard-form .form-field input:focus {
+  border-bottom-color: var(--accent);
+}
+
+#postcard-form .form-field input::placeholder {
+  color: #ccc;
+  font-family: var(--font-hand);
+}
+
+/* Champ en erreur */
+#postcard-form .form-field.field-error input {
+  border-bottom-color: var(--accent);
+}
+
+/* Bouton envoi — style tampon postal */
+#submit-btn {
+  margin-top: 8px;
+  padding: 8px 24px;
+  background: none;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#submit-btn:hover {
+  background-color: var(--accent);
+  color: var(--letter);
+}
+
+#submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Spinner de chargement dans le bouton */
+#submit-btn.loading {
+  pointer-events: none;
+  color: transparent;
+}
+
+#submit-btn.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   PHASE 5 — CONFIRMATION
+   ============================================ */
+
+#phase-confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 10%;
+}
+
+/* Texte de confirmation principal */
+#confirmation-text {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 5vw, 42px);
+  color: var(--text);
+  letter-spacing: 2px;
+  text-align: center;
+  opacity: 0;
+}
+
+/* Numéro de tracking — simulé */
+#tracking-number {
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 1.5vw, 14px);
+  color: var(--text);
+  opacity: 0;
+  letter-spacing: 3px;
+}
+
+/* Conteneur des boutons post-soumission */
+#confirmation-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  opacity: 0;
+}
+
+/* Style commun pour les boutons de confirmation */
+#presave-btn,
+#share-btn {
+  display: inline-block;
+  padding: 10px 28px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--text);
+  color: var(--text);
+  background: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+}
+
+#presave-btn:hover,
+#share-btn:hover {
+  background-color: var(--text);
+  color: var(--bg);
+}
+
+/* ============================================
+   RESPONSIVE — PHASES 3, 4, 5
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Phase 3 */
+  #arrival-letter {
+    width: 60px;
+    height: 40px;
+  }
+
+  #arrival-letter::after {
+    width: 6px;
+    height: 6px;
+    bottom: 4px;
+    right: 4px;
+  }
+
+  /* Phase 4 — carte postale en portrait sur mobile */
+  #postcard {
+    width: 92vw;
+    height: auto;
+    min-height: 420px;
+  }
+
+  #postcard-back {
+    flex-direction: column;
+  }
+
+  #postcard-line-divider {
+    top: auto;
+    bottom: auto;
+    left: 8%;
+    right: 8%;
+    top: 50%;
+    width: auto;
+    height: 1px;
+  }
+
+  #postcard-left,
+  #postcard-right {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  #postcard-left {
+    height: 40%;
+  }
+
+  #postcard-right {
+    height: 60%;
+  }
+
+  #postcard-stamp {
+    width: 30px;
+    height: 36px;
+  }
+
+  /* Phase 5 */
+  #confirmation-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+}
