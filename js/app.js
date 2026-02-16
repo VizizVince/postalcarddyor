@@ -19,6 +19,26 @@
   var letterEl = null;
   var journeyTextsEl = null;
 
+  // Phase 3
+  var arrivalCanvas = null;
+  var arrivalCtx = null;
+  var arrivalLetter = null;
+  var arrivalText = null;
+
+  // Phase 4
+  var postcardEl = null;
+
+  // Phase 5
+  var confirmationText = null;
+  var trackingNumberEl = null;
+  var confirmationButtons = null;
+  var presaveBtn = null;
+  var shareBtn = null;
+
+  // État global
+  var formSubmitted = false;
+  var scrollLocked = false;
+
   // --- LENIS (smooth scroll) ---
   var lenis = null;
 
@@ -69,9 +89,29 @@
     letterEl = document.getElementById('letter');
     journeyTextsEl = document.getElementById('journey-texts');
 
+    // Phase 3
+    arrivalCanvas = document.getElementById('topo-canvas-arrival');
+    arrivalLetter = document.getElementById('arrival-letter');
+    arrivalText = document.getElementById('arrival-text');
+
+    // Phase 4
+    postcardEl = document.getElementById('postcard');
+
+    // Phase 5
+    confirmationText = document.getElementById('confirmation-text');
+    trackingNumberEl = document.getElementById('tracking-number');
+    confirmationButtons = document.getElementById('confirmation-buttons');
+    presaveBtn = document.getElementById('presave-btn');
+    shareBtn = document.getElementById('share-btn');
+
     // Contexte du canvas visible
     if (topoCanvas) {
       topoCtx = topoCanvas.getContext('2d');
+    }
+
+    // Contexte du canvas arrivée
+    if (arrivalCanvas) {
+      arrivalCtx = arrivalCanvas.getContext('2d');
     }
 
     // Cacher toutes les sections sauf l'intro au démarrage
@@ -89,6 +129,14 @@
 
     // Dessiner la carte topographique dans le buffer offscreen
     initTopoBuffer();
+
+    // Construire le formulaire (Phase 4)
+    if (typeof window.buildPostcardForm === 'function') {
+      window.buildPostcardForm();
+    }
+
+    // Configurer le pre-save et le share (Phase 5)
+    initConfirmationButtons();
 
     // Lancer les animations après un court délai (laisser le DOM se stabiliser)
     // 1.5s = temps avant que le typewriter commence, comme demandé dans la spec
@@ -817,6 +865,8 @@
       end: 'bottom bottom',
       scrub: 0.5,
       onUpdate: function (self) {
+        if (scrollLocked) return;
+
         var progress = self.progress; // 0 → 1
 
         // --- PHASE 1 : Intro (0% → 5%) ---
@@ -827,6 +877,18 @@
 
         // --- PHASE 2 : Voyage (5% → 65%) ---
         handlePhaseJourney(progress);
+
+        // --- PHASE 2→3 : Transition (63% → 65%) ---
+        handleTransitionJourneyToArrival(progress);
+
+        // --- PHASE 3 : Arrivée (65% → 80%) ---
+        handlePhaseArrival(progress);
+
+        // --- PHASE 3→4 : Transition (78% → 80%) ---
+        handleTransitionArrivalToForm(progress);
+
+        // --- PHASE 4 : Formulaire (80% → 95%) ---
+        handlePhaseForm(progress);
       }
     });
   }
@@ -922,6 +984,291 @@
   }
 
   // ============================================
+  // TRANSITION PHASE 2 → PHASE 3
+  // ============================================
+
+  function handleTransitionJourneyToArrival(progress) {
+    if (!phaseJourney || !phaseArrival) return;
+
+    if (progress < 0.63) {
+      // Phase 2 pleinement visible
+      phaseArrival.style.opacity = '0';
+      phaseArrival.style.visibility = 'hidden';
+    } else if (progress >= 0.63 && progress < 0.65) {
+      // Crossfade Phase 2 → Phase 3
+      var crossfade = (progress - 0.63) / 0.02;
+      phaseJourney.style.opacity = String(1 - crossfade);
+      phaseArrival.style.opacity = String(crossfade);
+      phaseArrival.style.visibility = 'visible';
+    } else {
+      phaseJourney.style.opacity = '0';
+      phaseJourney.style.visibility = 'hidden';
+      phaseArrival.style.opacity = '1';
+      phaseArrival.style.visibility = 'visible';
+    }
+  }
+
+  // ============================================
+  // PHASE 3 — Arrivée (scroll 65% → 80%)
+  // ============================================
+
+  /**
+   * Orchestre la Phase 3 :
+   * - Canvas de fond (snapshot de la dernière zone topo)
+   * - Lettre qui grandit progressivement
+   * - Texte d'arrivée qui apparaît
+   * @param {number} progress — scroll progress global (0 → 1)
+   */
+  function handlePhaseArrival(progress) {
+    if (progress < 0.65 || progress > 0.80) return;
+
+    // Progress normalisé de l'arrivée : 0 → 1
+    var arrivalProgress = (progress - 0.65) / 0.15;
+
+    // 1. Canvas de fond — snapshot du bas de la carte (zone océan)
+    blitArrivalCanvas();
+
+    // 2. Lettre qui grandit : 80x50 → 300x190 (ratio carte postale)
+    if (arrivalLetter) {
+      var startW = 80, startH = 50;
+      var endW = 300, endH = 190;
+      var w = startW + (endW - startW) * arrivalProgress;
+      var h = startH + (endH - startH) * arrivalProgress;
+      arrivalLetter.style.width = w + 'px';
+      arrivalLetter.style.height = h + 'px';
+      // Pulsation lumineuse croissante
+      var glow = arrivalProgress * 30;
+      arrivalLetter.style.boxShadow = '0 0 ' + glow + 'px rgba(255,255,255,' + (0.1 + arrivalProgress * 0.2) + ')';
+    }
+
+    // 3. Texte d'arrivée — apparaît vers 75% du scroll (arrivalProgress ~0.65)
+    if (arrivalText) {
+      if (arrivalProgress < 0.5) {
+        arrivalText.style.opacity = '0';
+      } else if (arrivalProgress < 0.7) {
+        var textFade = (arrivalProgress - 0.5) / 0.2;
+        arrivalText.style.opacity = String(textFade * 0.8);
+      } else {
+        arrivalText.style.opacity = '0.8';
+      }
+    }
+  }
+
+  /**
+   * Dessine un fond topographique statique pour la phase arrivée.
+   * Montre la zone océan (bas de la carte) en fond fixe.
+   */
+  function blitArrivalCanvas() {
+    if (!arrivalCtx || !offscreenCanvas) return;
+
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+
+    arrivalCanvas.width = vw;
+    arrivalCanvas.height = vh;
+
+    // Afficher le bas du buffer (zone océan) comme fond statique
+    var sourceY = bufferHeight - vh;
+    arrivalCtx.clearRect(0, 0, vw, vh);
+    arrivalCtx.drawImage(offscreenCanvas, 0, sourceY, vw, vh, 0, 0, vw, vh);
+  }
+
+  // ============================================
+  // TRANSITION PHASE 3 → PHASE 4
+  // ============================================
+
+  function handleTransitionArrivalToForm(progress) {
+    if (!phaseArrival || !phaseForm) return;
+
+    if (progress < 0.78) {
+      phaseForm.style.opacity = '0';
+      phaseForm.style.visibility = 'hidden';
+    } else if (progress >= 0.78 && progress < 0.80) {
+      // Crossfade Phase 3 → Phase 4
+      var crossfade = (progress - 0.78) / 0.02;
+      phaseArrival.style.opacity = String(1 - crossfade);
+      phaseForm.style.opacity = String(crossfade);
+      phaseForm.style.visibility = 'visible';
+    } else {
+      phaseArrival.style.opacity = '0';
+      phaseArrival.style.visibility = 'hidden';
+      phaseForm.style.opacity = '1';
+      phaseForm.style.visibility = 'visible';
+    }
+  }
+
+  // ============================================
+  // PHASE 4 — Formulaire (scroll 80% → 95%)
+  // ============================================
+
+  var cardFlipped = false;
+
+  /**
+   * Orchestre la Phase 4 :
+   * - La carte postale apparaît face avant
+   * - À ~87% du scroll, elle se retourne pour montrer le formulaire
+   * - Le scroll se verrouille à 95% pour que l'utilisateur remplisse le formulaire
+   * @param {number} progress — scroll progress global (0 → 1)
+   */
+  function handlePhaseForm(progress) {
+    if (progress < 0.80) return;
+    if (formSubmitted) return;
+
+    // Progress normalisé du formulaire : 0 → 1
+    var formProgress = Math.min(1, (progress - 0.80) / 0.15);
+
+    // Carte postale — scale d'entrée
+    if (postcardEl) {
+      // Scale de 0.8 → 1 sur la première moitié
+      var scale = 0.8 + Math.min(formProgress * 2, 1) * 0.2;
+      postcardEl.style.transform = 'scale(' + scale + ')';
+
+      // Flip à mi-parcours (~87% du scroll global, formProgress ~0.47)
+      if (formProgress > 0.45 && !cardFlipped) {
+        cardFlipped = true;
+        postcardEl.classList.add('flipped');
+      }
+    }
+
+    // Verrouiller le scroll à 95% pour laisser l'utilisateur remplir
+    if (progress >= 0.94 && !scrollLocked && !formSubmitted) {
+      lockScroll();
+    }
+  }
+
+  /**
+   * Verrouille le scroll (Lenis) pour permettre l'interaction formulaire.
+   */
+  function lockScroll() {
+    scrollLocked = true;
+    if (lenis) {
+      lenis.stop();
+    }
+  }
+
+  /**
+   * Déverrouille le scroll.
+   */
+  function unlockScroll() {
+    scrollLocked = false;
+    if (lenis) {
+      lenis.start();
+    }
+  }
+
+  // ============================================
+  // PHASE 5 — Confirmation (après soumission du formulaire)
+  // ============================================
+
+  /**
+   * Déclenche la transition vers la Phase 5 après soumission réussie.
+   * Appelée par form.js → window.onFormSubmit()
+   * @param {Object} data — données du formulaire
+   */
+  function showConfirmation(data) {
+    formSubmitted = true;
+
+    // Crossfade Phase 4 → Phase 5
+    gsap.to(phaseForm, {
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power2.inOut',
+      onComplete: function () {
+        phaseForm.style.visibility = 'hidden';
+
+        // Afficher la Phase 5
+        phaseConfirmation.style.visibility = 'visible';
+        phaseConfirmation.style.opacity = '1';
+
+        // Animation séquentielle des éléments de confirmation
+        animateConfirmation(data);
+      }
+    });
+  }
+
+  /**
+   * Anime les éléments de la Phase 5 :
+   * 1. Texte principal ("Tu carta corre.")
+   * 2. Numéro de tracking
+   * 3. Boutons (pre-save + share)
+   * @param {Object} data — données du formulaire
+   */
+  function animateConfirmation(data) {
+    var tl = gsap.timeline();
+
+    // 1. Texte principal — fade in + léger glissement vers le haut
+    tl.fromTo(confirmationText,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }
+    );
+
+    // 2. Numéro de tracking — apparition lettre par lettre
+    var trackingPrefix = t('trackingPrefix');
+    var trackingCode = (typeof window.generateTrackingNumber === 'function')
+      ? window.generateTrackingNumber()
+      : 'MX-000000-0000';
+    var fullTracking = trackingPrefix + trackingCode;
+
+    tl.add(function () {
+      typewriterEffect(trackingNumberEl, fullTracking, 40);
+    }, '+=0.3');
+
+    // 3. Boutons — fade in
+    tl.to(confirmationButtons,
+      { opacity: 1, duration: 0.6, ease: 'power2.out' },
+      '+=0.8'
+    );
+
+    // Déverrouiller le scroll (l'utilisateur peut remonter s'il veut)
+    tl.add(function () {
+      unlockScroll();
+    }, '+=0.2');
+  }
+
+  /**
+   * Effet typewriter simple : affiche un texte caractère par caractère.
+   * @param {HTMLElement} el — élément cible
+   * @param {string} text — texte à afficher
+   * @param {number} speed — délai entre chaque caractère (ms)
+   */
+  function typewriterEffect(el, text, speed) {
+    if (!el) return;
+    el.textContent = '';
+    el.style.opacity = '1';
+    var i = 0;
+    function addChar() {
+      if (i < text.length) {
+        el.textContent += text.charAt(i);
+        i++;
+        setTimeout(addChar, speed);
+      }
+    }
+    addChar();
+  }
+
+  /**
+   * Initialise les boutons de la Phase 5 (pre-save link + share handler).
+   */
+  function initConfirmationButtons() {
+    // Pre-save — lien configuré
+    if (presaveBtn) {
+      presaveBtn.href = CONFIG.presaveLink || '#';
+    }
+
+    // Share — brancher le handler
+    if (shareBtn) {
+      shareBtn.addEventListener('click', function () {
+        if (typeof window.handleShare === 'function') {
+          window.handleShare();
+        }
+      });
+    }
+  }
+
+  // --- Callback formulaire (exposée globalement pour form.js) ---
+  window.onFormSubmit = showConfirmation;
+
+  // ============================================
   // HOOK GLOBAL — Changement de langue
   // ============================================
 
@@ -932,9 +1279,12 @@
   function onLanguageChange() {
     // Reconstruire le typewriter si visible
     rebuildTypewriter();
-    // Reconstruire les textes du voyage (les divs avec data-i18n-array
-    // sont aussi mis à jour par updateAllTexts, mais on reconstruit pour sûreté)
+    // Reconstruire les textes du voyage
     buildJourneyTexts();
+    // Mettre à jour les labels du formulaire
+    if (typeof window.updateFormLabels === 'function') {
+      window.updateFormLabels();
+    }
   }
 
   window.onLangChange = onLanguageChange;

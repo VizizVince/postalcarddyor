@@ -353,3 +353,420 @@ html, body {
     max-width: 200px;
   }
 }
+
+/* ============================================
+   PHASE 3 — ARRIVÉE
+   ============================================ */
+
+/* Canvas de fond pour la phase arrivée (continuité visuelle) */
+#topo-canvas-arrival {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lettre d'arrivée — commence petite, grandit via GSAP */
+#arrival-letter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 50px;
+  background-color: var(--letter);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  will-change: transform, width, height;
+}
+
+/* Cachet rouge sur la lettre d'arrivée */
+#arrival-letter::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+/* Texte d'arrivée */
+#arrival-text {
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: clamp(14px, 2.5vw, 18px);
+  letter-spacing: 1px;
+  color: var(--text);
+  opacity: 0;
+  text-align: center;
+  max-width: 80%;
+  z-index: 11;
+}
+
+/* ============================================
+   PHASE 4 — FORMULAIRE CARTE POSTALE
+   ============================================ */
+
+#phase-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+}
+
+/* Conteneur carte postale — perspective pour le flip 3D */
+#postcard {
+  width: min(90vw, 600px);
+  height: min(60vw, 380px);
+  position: relative;
+  z-index: 10;
+}
+
+/* Conteneur interne — fait le flip 3D */
+#postcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Quand la carte est retournée */
+#postcard.flipped #postcard-inner {
+  transform: rotateY(180deg);
+}
+
+/* Faces avant et arrière */
+#postcard-front,
+#postcard-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* --- FACE AVANT --- */
+#postcard-front {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+/* Art de la face avant */
+#postcard-front-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#postcard-title {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 4vw, 36px);
+  color: var(--text);
+  letter-spacing: 4px;
+  font-weight: 700;
+}
+
+#postcard-artist {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1.5vw, 13px);
+  color: var(--accent);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+/* Timbre en haut à droite de la face avant */
+#postcard-stamp {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 48px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.15);
+  background: repeating-conic-gradient(
+    var(--accent) 0% 25%,
+    transparent 0% 50%
+  ) 50% / 6px 6px;
+  opacity: 0.3;
+}
+
+/* --- FACE ARRIÈRE (formulaire) --- */
+#postcard-back {
+  background: #f5f0e8;
+  border: 1px solid #d4cfc5;
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: row;
+}
+
+/* Ligne verticale centrale (séparateur classique carte postale) */
+#postcard-line-divider {
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: 50%;
+  width: 1px;
+  background-color: #c0b8a8;
+}
+
+/* Moitié gauche — message décoratif */
+#postcard-left {
+  width: 50%;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#postcard-message {
+  font-family: var(--font-hand);
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: #2a2a2a;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Moitié droite — formulaire + bouton */
+#postcard-right {
+  width: 50%;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Champ du formulaire — style lignes manuscrites */
+#postcard-form .form-field {
+  position: relative;
+  margin-bottom: 2px;
+}
+
+#postcard-form .form-field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 1px;
+}
+
+#postcard-form .form-field input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #c0b8a8;
+  background: transparent;
+  font-family: var(--font-hand);
+  font-size: clamp(14px, 2vw, 18px);
+  color: #1a1a1a;
+  padding: 4px 0;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#postcard-form .form-field input:focus {
+  border-bottom-color: var(--accent);
+}
+
+#postcard-form .form-field input::placeholder {
+  color: #ccc;
+  font-family: var(--font-hand);
+}
+
+/* Champ en erreur */
+#postcard-form .form-field.field-error input {
+  border-bottom-color: var(--accent);
+}
+
+/* Bouton envoi — style tampon postal */
+#submit-btn {
+  margin-top: 8px;
+  padding: 8px 24px;
+  background: none;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#submit-btn:hover {
+  background-color: var(--accent);
+  color: var(--letter);
+}
+
+#submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Spinner de chargement dans le bouton */
+#submit-btn.loading {
+  pointer-events: none;
+  color: transparent;
+}
+
+#submit-btn.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   PHASE 5 — CONFIRMATION
+   ============================================ */
+
+#phase-confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 10%;
+}
+
+/* Texte de confirmation principal */
+#confirmation-text {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 5vw, 42px);
+  color: var(--text);
+  letter-spacing: 2px;
+  text-align: center;
+  opacity: 0;
+}
+
+/* Numéro de tracking — simulé */
+#tracking-number {
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 1.5vw, 14px);
+  color: var(--text);
+  opacity: 0;
+  letter-spacing: 3px;
+}
+
+/* Conteneur des boutons post-soumission */
+#confirmation-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  opacity: 0;
+}
+
+/* Style commun pour les boutons de confirmation */
+#presave-btn,
+#share-btn {
+  display: inline-block;
+  padding: 10px 28px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--text);
+  color: var(--text);
+  background: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+}
+
+#presave-btn:hover,
+#share-btn:hover {
+  background-color: var(--text);
+  color: var(--bg);
+}
+
+/* ============================================
+   RESPONSIVE — PHASES 3, 4, 5
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Phase 3 */
+  #arrival-letter {
+    width: 60px;
+    height: 40px;
+  }
+
+  #arrival-letter::after {
+    width: 6px;
+    height: 6px;
+    bottom: 4px;
+    right: 4px;
+  }
+
+  /* Phase 4 — carte postale en portrait sur mobile */
+  #postcard {
+    width: 92vw;
+    height: auto;
+    min-height: 420px;
+  }
+
+  #postcard-back {
+    flex-direction: column;
+  }
+
+  #postcard-line-divider {
+    top: auto;
+    bottom: auto;
+    left: 8%;
+    right: 8%;
+    top: 50%;
+    width: auto;
+    height: 1px;
+  }
+
+  #postcard-left,
+  #postcard-right {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  #postcard-left {
+    height: 40%;
+  }
+
+  #postcard-right {
+    height: 60%;
+  }
+
+  #postcard-stamp {
+    width: 30px;
+    height: 36px;
+  }
+
+  /* Phase 5 */
+  #confirmation-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+}

@@ -54,15 +54,48 @@
       </section>
 
       <!-- Phase 3 : Arrivée -->
-      <section id="phase-arrival"></section>
+      <section id="phase-arrival">
+        <canvas id="topo-canvas-arrival"></canvas>
+        <div id="arrival-letter"></div>
+        <p id="arrival-text" data-i18n="arrivalLine"></p>
+      </section>
 
       <!-- Phase 4 : Formulaire carte postale -->
       <section id="phase-form">
-        <div id="postcard"></div>
+        <div id="postcard">
+          <div id="postcard-inner">
+            <!-- Face avant (design carte postale) -->
+            <div id="postcard-front">
+              <div id="postcard-front-art">
+                <span id="postcard-title">JUGO DE DIAMANTES</span>
+                <span id="postcard-artist">MANDRAGORA</span>
+              </div>
+              <div id="postcard-stamp"></div>
+            </div>
+            <!-- Face arrière (formulaire) -->
+            <div id="postcard-back">
+              <div id="postcard-line-divider"></div>
+              <div id="postcard-left">
+                <div id="postcard-message" data-i18n="arrivalLine"></div>
+              </div>
+              <div id="postcard-right">
+                <form id="postcard-form" autocomplete="off"></form>
+                <button id="submit-btn" type="button" data-i18n="submitButton"></button>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Phase 5 : Confirmation -->
-      <section id="phase-confirmation"></section>
+      <section id="phase-confirmation">
+        <p id="confirmation-text" data-i18n="confirmationLine"></p>
+        <p id="tracking-number"></p>
+        <div id="confirmation-buttons">
+          <a id="presave-btn" href="#" target="_blank" rel="noopener noreferrer" data-i18n="presaveButtonText"></a>
+          <button id="share-btn" data-i18n="shareButtonText"></button>
+        </div>
+      </section>
 
     </div>
   </div>
