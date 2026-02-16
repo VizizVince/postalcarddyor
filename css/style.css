@@ -65,13 +65,15 @@ html, body {
 #viewport::after {
   content: "";
   position: absolute;
-  inset: 0;
+  /* Dépassement négatif pour que le translate de l'animation ne montre pas les bords */
+  inset: -20%;
   z-index: 9999;
   pointer-events: none;
   opacity: 0.04;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-size: 128px 128px;
   animation: grain 0.5s steps(6) infinite;
+  will-change: transform;
 }
 
 /* Animation du grain — léger déplacement pour simuler du bruit vivant */
@@ -139,4 +141,145 @@ html, body {
 /* Toggle audio — en haut à droite */
 #audio-toggle {
   right: 20px;
+}
+
+/* ============================================
+   PHASE 1 — INTRO (typewriter)
+   ============================================ */
+
+/* Section intro — centrée verticalement et horizontalement */
+#phase-intro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10%;
+}
+
+/* Conteneur du texte typewriter */
+#intro-text {
+  font-family: var(--font-mono);
+  font-size: clamp(16px, 3vw, 22px);
+  letter-spacing: 1px;
+  line-height: 1.6;
+  position: relative;
+  display: inline-block;
+}
+
+/* Chaque caractère du typewriter est un span inline */
+#intro-text .char {
+  opacity: 0;
+  display: inline-block;
+}
+
+/* Curseur clignotant à la fin du texte typewriter */
+#intro-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background-color: var(--text);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursorBlink 1s steps(1) infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ============================================
+   PHASE 2 — VOYAGE (styles de base, détaillés en Phase 2)
+   ============================================ */
+
+/* Canvas topographique — remplit tout le viewport */
+#topo-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lettre — centrée, au-dessus du canvas */
+#letter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 50px;
+  background-color: var(--letter);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  will-change: transform;
+  animation: letterPulse 2s ease-in-out infinite;
+}
+
+/* Cachet rouge en bas à droite de la lettre */
+#letter::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+@keyframes letterPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.02); }
+}
+
+/* Textes narratifs du voyage */
+#journey-texts {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+#journey-texts .journey-text {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text);
+  opacity: 0;
+  max-width: 300px;
+  line-height: 1.5;
+  /* Révélation horizontale (clip-path) — contrôlée par GSAP */
+  clip-path: inset(0 100% 0 0);
+}
+
+/* Positionnement varié des 3 textes narratifs */
+#journey-texts .journey-text:nth-child(1) {
+  left: 8%;
+  top: 30%;
+}
+
+#journey-texts .journey-text:nth-child(2) {
+  right: 8%;
+  top: 45%;
+  text-align: right;
+}
+
+#journey-texts .journey-text:nth-child(3) {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 65%;
+  text-align: center;
+}
+
+/* Mobile — ajustements textes et lettre */
+@media (max-width: 767px) {
+  #letter {
+    width: 60px;
+    height: 40px;
+  }
+
+  #journey-texts .journey-text {
+    font-size: 12px;
+    max-width: 200px;
+  }
 }

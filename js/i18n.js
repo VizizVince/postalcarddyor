@@ -84,6 +84,11 @@ function updateAllTexts() {
     var isOn = (typeof audioActive !== 'undefined') ? audioActive : false;
     audioToggle.textContent = isOn ? t('audioOn') : t('audioOff');
   }
+
+  // Notifier app.js du changement de langue (reconstruction typewriter, etc.)
+  if (typeof window.onLangChange === 'function') {
+    window.onLangChange();
+  }
 }
 
 // --- INITIALISATION ---
