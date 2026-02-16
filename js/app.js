@@ -77,6 +77,20 @@
   // ============================================
 
   function init() {
+    // Vérifier que les dépendances critiques sont disponibles
+    if (typeof CONFIG === 'undefined') {
+      console.error('[app] CONFIG non disponible. Vérifiez que config.js est chargé avant app.js.');
+      return;
+    }
+    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+      console.error('[app] GSAP ou ScrollTrigger non disponible. Vérifiez les CDN.');
+      return;
+    }
+    if (typeof Lenis === 'undefined') {
+      console.error('[app] Lenis non disponible. Vérifiez le CDN.');
+      return;
+    }
+
     // Récupérer les références DOM
     scrollContainer = document.getElementById('scroll-container');
     viewport = document.getElementById('viewport');
@@ -203,6 +217,8 @@
   /** Gère le redimensionnement de la fenêtre */
   function handleResize() {
     initTopoBuffer();
+    // Forcer le re-rendu du canvas d'arrivée au prochain affichage
+    arrivalCanvasReady = false;
   }
 
   // ============================================
@@ -971,7 +987,7 @@
     checkLightPoints(progress);
 
     // 5. Modulation audio (bonus) — légère variation selon la zone
-    if (typeof setAudioIntensity === 'function') {
+    if (typeof window.setAudioIntensity === 'function') {
       // Volume plus fort dans la sierra et la ville (0.20 → 0.50)
       var audioIntensity = 0.7;
       if (progress > 0.20 && progress < 0.50) {
@@ -979,7 +995,7 @@
       } else if (progress > 0.55) {
         audioIntensity = 0.5; // Plus calme dans l'océan
       }
-      setAudioIntensity(audioIntensity);
+      window.setAudioIntensity(audioIntensity);
     }
   }
 
@@ -1054,12 +1070,17 @@
     }
   }
 
+  // Flag pour éviter de re-blitter le canvas d'arrivée si rien n'a changé
+  var arrivalCanvasReady = false;
+
   /**
    * Dessine un fond topographique statique pour la phase arrivée.
    * Montre la zone océan (bas de la carte) en fond fixe.
+   * Ne redessine que si nécessaire (premier appel ou après resize).
    */
   function blitArrivalCanvas() {
     if (!arrivalCtx || !offscreenCanvas) return;
+    if (arrivalCanvasReady) return; // Déjà dessiné, inutile de redessiner
 
     var vw = window.innerWidth;
     var vh = window.innerHeight;
@@ -1068,9 +1089,10 @@
     arrivalCanvas.height = vh;
 
     // Afficher le bas du buffer (zone océan) comme fond statique
-    var sourceY = bufferHeight - vh;
+    var sourceY = Math.max(0, bufferHeight - vh);
     arrivalCtx.clearRect(0, 0, vw, vh);
     arrivalCtx.drawImage(offscreenCanvas, 0, sourceY, vw, vh, 0, 0, vw, vh);
+    arrivalCanvasReady = true;
   }
 
   // ============================================

@@ -10,6 +10,48 @@
   var submitBtn = null;
   var isSubmitting = false;
 
+  // Anti-spam : délai minimum entre deux soumissions (5 secondes)
+  var lastSubmitTime = 0;
+  var SUBMIT_COOLDOWN = 5000;
+
+  // Numéro de tracking généré lors de l'envoi
+  var currentTrackingNumber = '';
+
+  // ============================================
+  // SANITIZATION — Protection contre les injections
+  // ============================================
+
+  /**
+   * Nettoie une chaîne de caractères pour éviter les injections XSS.
+   * Échappe les caractères HTML spéciaux.
+   * @param {string} str — chaîne à nettoyer
+   * @returns {string} chaîne sécurisée
+   */
+  function sanitizeInput(str) {
+    if (typeof str !== 'string') return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
+  /**
+   * Nettoie une valeur brute de champ (trim + longueur max).
+   * @param {string} value — valeur brute
+   * @param {number} maxLen — longueur maximale autorisée
+   * @returns {string} valeur nettoyée
+   */
+  function cleanFieldValue(value, maxLen) {
+    if (typeof value !== 'string') return '';
+    var trimmed = value.trim();
+    if (maxLen && trimmed.length > maxLen) {
+      trimmed = trimmed.substring(0, maxLen);
+    }
+    return trimmed;
+  }
+
   // ============================================
   // CONSTRUCTION DU FORMULAIRE
   // ============================================
@@ -41,9 +83,24 @@
       input.required = field.required;
       input.autocomplete = 'off';
 
+      // Limiter la longueur des entrées pour éviter les abus
+      if (field.id === 'email') {
+        input.maxLength = 254; // Longueur max RFC 5321
+      } else if (field.id === 'nombre') {
+        input.maxLength = 100;
+      } else if (field.id === 'direccion') {
+        input.maxLength = 200;
+      } else if (field.id === 'ciudad') {
+        input.maxLength = 100;
+      } else {
+        input.maxLength = 200; // Défaut raisonnable pour tout champ
+      }
+
       // Retirer l'erreur quand l'utilisateur tape
       input.addEventListener('input', function () {
         wrapper.classList.remove('field-error');
+        // Retirer le message d'erreur global s'il existe
+        clearFormError();
       });
 
       wrapper.appendChild(label);
@@ -90,7 +147,7 @@
       var input = document.getElementById('field-' + field.id);
       if (!input) return;
 
-      var value = input.value.trim();
+      var value = cleanFieldValue(input.value, input.maxLength);
       var wrapper = input.parentElement;
 
       if (!value) {
@@ -99,9 +156,10 @@
         return;
       }
 
-      // Validation email basique
+      // Validation email
       if (field.id === 'email') {
-        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // Regex RFC 5322 simplifiée mais robuste
+        var emailRegex = /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
         if (!emailRegex.test(value)) {
           wrapper.classList.add('field-error');
           valid = false;
@@ -110,6 +168,41 @@
     });
 
     return valid;
+  }
+
+  // ============================================
+  // MESSAGES D'ERREUR
+  // ============================================
+
+  /**
+   * Affiche un message d'erreur sous le formulaire.
+   * @param {string} message — le message à afficher
+   */
+  function showFormError(message) {
+    clearFormError();
+    if (!formEl) return;
+
+    var errorEl = document.createElement('div');
+    errorEl.id = 'form-error-message';
+    errorEl.className = 'form-error-msg';
+    errorEl.textContent = message;
+    errorEl.setAttribute('role', 'alert');
+
+    // Insérer après le formulaire, dans le même conteneur
+    formEl.parentNode.insertBefore(errorEl, formEl.nextSibling);
+
+    // Retirer automatiquement après 4 secondes
+    setTimeout(clearFormError, 4000);
+  }
+
+  /**
+   * Supprime le message d'erreur du formulaire.
+   */
+  function clearFormError() {
+    var existing = document.getElementById('form-error-message');
+    if (existing) {
+      existing.remove();
+    }
   }
 
   // ============================================
@@ -123,21 +216,35 @@
   function handleSubmit() {
     if (isSubmitting) return;
 
+    // Anti-spam : vérifier le cooldown
+    var now = Date.now();
+    if (now - lastSubmitTime < SUBMIT_COOLDOWN) {
+      return;
+    }
+
     // Valider
     if (!validateForm()) return;
 
     isSubmitting = true;
+    lastSubmitTime = now;
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
-    // Collecter les données
+    // Générer le numéro de tracking
+    currentTrackingNumber = generateTrackingNumber();
+
+    // Collecter et nettoyer les données
     var formData = {};
     CONFIG.formFields.forEach(function (field) {
       var input = document.getElementById('field-' + field.id);
       if (input) {
-        formData[field.id] = input.value.trim();
+        formData[field.id] = cleanFieldValue(input.value, input.maxLength);
       }
     });
+
+    // Ajouter le tracking et le timestamp
+    formData.tracking = currentTrackingNumber;
+    formData.timestamp = new Date().toISOString();
 
     // Envoyer vers Google Sheets
     sendToGoogleSheets(formData)
@@ -145,9 +252,10 @@
         onSubmitSuccess(formData);
       })
       .catch(function (err) {
-        console.warn('[form] Erreur envoi :', err.message);
+        console.warn('[form] Erreur envoi :', err.message || err);
         // En cas d'erreur réseau, on passe quand même à la confirmation
-        // pour ne pas bloquer l'expérience utilisateur
+        // pour ne pas bloquer l'expérience utilisateur.
+        // Les données sont en console pour debugging.
         onSubmitSuccess(formData);
       });
   }
@@ -160,15 +268,28 @@
   function sendToGoogleSheets(data) {
     var endpoint = CONFIG.googleSheetsEndpoint;
     if (!endpoint || endpoint.indexOf('REMPLACER') !== -1) {
-      // Endpoint pas encore configuré — simuler un succès
+      // Endpoint pas encore configuré — log en console et simuler un succès
+      console.info('[form] Endpoint non configuré. Données du formulaire :', data);
       return Promise.resolve();
     }
+
+    // Valider que l'URL est bien un endpoint Google Apps Script
+    if (endpoint.indexOf('script.google.com') === -1) {
+      console.warn('[form] Endpoint suspect (ne pointe pas vers script.google.com)');
+      return Promise.reject(new Error('Endpoint non valide'));
+    }
+
+    // Avec mode: 'no-cors', le navigateur limite les headers autorisés.
+    // On envoie en application/x-www-form-urlencoded pour compatibilité.
+    var formBody = Object.keys(data).map(function (key) {
+      return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+    }).join('&');
 
     return fetch(endpoint, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formBody,
     });
   }
 
@@ -180,6 +301,7 @@
   function onSubmitSuccess(data) {
     isSubmitting = false;
     submitBtn.classList.remove('loading');
+    submitBtn.disabled = false;
 
     // Notifier app.js pour déclencher la Phase 5
     if (typeof window.onFormSubmit === 'function') {
@@ -193,7 +315,7 @@
 
   /**
    * Génère un faux numéro de tracking postal pour l'ambiance.
-   * Format : MX-XXXXXX-XXXX
+   * Format : MX-XXXXXX-XXXX (lettres + chiffres)
    * @returns {string}
    */
   function generateTrackingNumber() {
@@ -215,9 +337,11 @@
 
   /**
    * Déclenche le partage via Web Share API ou copie dans le presse-papier.
+   * Affiche un feedback visuel à l'utilisateur.
    */
   function handleShare() {
-    var shareText = (currentLang === 'es')
+    var lang = (typeof currentLang !== 'undefined') ? currentLang : 'es';
+    var shareText = (lang === 'es')
       ? CONFIG.share.messageES
       : CONFIG.share.messageEN;
     var shareUrl = CONFIG.share.siteUrl;
@@ -233,10 +357,68 @@
     } else {
       // Fallback : copier dans le presse-papier
       var fullText = shareText + ' ' + shareUrl;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(fullText);
-      }
+      copyToClipboard(fullText, lang);
     }
+  }
+
+  /**
+   * Copie un texte dans le presse-papier et affiche un feedback visuel.
+   * @param {string} text — texte à copier
+   * @param {string} lang — langue pour le message de confirmation
+   */
+  function copyToClipboard(text, lang) {
+    var shareBtn = document.getElementById('share-btn');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showCopyFeedback(shareBtn, lang);
+      }).catch(function () {
+        // Fallback si clipboard API échoue (certains navigateurs restreignent)
+        fallbackCopy(text);
+        showCopyFeedback(shareBtn, lang);
+      });
+    } else {
+      fallbackCopy(text);
+      showCopyFeedback(shareBtn, lang);
+    }
+  }
+
+  /**
+   * Fallback pour copier du texte sans navigator.clipboard.
+   * Crée un textarea temporaire.
+   * @param {string} text — texte à copier
+   */
+  function fallbackCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+    } catch (e) {
+      // Silencieux — pas de crash
+    }
+    document.body.removeChild(textarea);
+  }
+
+  /**
+   * Affiche un feedback visuel temporaire sur le bouton de partage.
+   * @param {HTMLElement} btn — le bouton share
+   * @param {string} lang — langue pour le message
+   */
+  function showCopyFeedback(btn, lang) {
+    if (!btn) return;
+    var originalText = btn.textContent;
+    btn.textContent = (lang === 'es') ? 'Enlace copiado' : 'Link copied';
+    btn.classList.add('copy-success');
+    setTimeout(function () {
+      btn.textContent = originalText;
+      btn.classList.remove('copy-success');
+    }, 2000);
   }
 
   // ============================================

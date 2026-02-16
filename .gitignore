@@ -1,0 +1,26 @@
+# Fichiers système
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dépendances (si npm est utilisé un jour)
+node_modules/
+
+# Fichiers d'environnement
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Fichiers temporaires
+*.tmp
+*.bak
