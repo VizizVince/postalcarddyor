@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MANDRAGORA — Jugo De Diamantes. Un mensaje fue enviado. Recibe tu carta postale.">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>MANDRAGORA — Jugo De Diamantes</title>
+
+  <!-- Google Fonts : Playfair Display, Space Mono, Caveat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+
+  <!-- Lenis (smooth scroll) -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js" defer></script>
+
+  <!-- Config (AVANT les autres scripts) -->
+  <script src="config.js" defer></script>
+
+  <!-- Scripts applicatifs (dans l'ordre : i18n, audio, form, app) -->
+  <script src="js/i18n.js" defer></script>
+  <script src="js/audio.js" defer></script>
+  <script src="js/form.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+
+  <!-- Toggle langue (fixe, haut gauche) -->
+  <button id="lang-toggle" type="button" aria-label="Cambiar idioma / Switch language"></button>
+
+  <!-- Toggle audio (fixe, haut droite) -->
+  <button id="audio-toggle" type="button" aria-label="Toggle audio"></button>
+
+  <!-- Conteneur scroll (très haut pour piloter le scroll) -->
+  <div id="scroll-container">
+
+    <!-- Viewport sticky (tout le contenu visible) -->
+    <div id="viewport">
+
+      <!-- Phase 1 : Intro — texte typewriter sur fond noir -->
+      <div id="phase-intro"></div>
+
+      <!-- Canvas topographique — visible pendant phases 2 et 3 -->
+      <canvas id="topo-canvas"></canvas>
+
+      <!-- Fond table — apparaît en phase 3, persiste en phases 4/5 -->
+      <div id="table-bg"></div>
+
+      <!-- Textes narratifs du voyage (phase 2) -->
+      <div id="journey-texts"></div>
+
+      <!-- Points lumineux (phase 2) -->
+      <div id="light-points-container"></div>
+
+      <!-- La lettre — UN SEUL élément qui traverse toutes les phases -->
+      <div id="letter">
+        <div id="letter-seal"></div>
+      </div>
+
+      <!-- Texte d'arrivée (phase 3) -->
+      <p id="arrival-text" data-i18n="arrivalLine"></p>
+
+      <!-- Carte postale / formulaire (phase 4) -->
+      <div id="postcard">
+        <div id="postcard-inner">
+          <!-- Face avant (design carte postale) -->
+          <div id="postcard-front">
+            <div id="postcard-front-art">
+              <span id="postcard-title">JUGO DE DIAMANTES</span>
+              <span id="postcard-artist">MANDRAGORA</span>
+            </div>
+            <div id="postcard-stamp-front">M</div>
+          </div>
+          <!-- Face arrière (formulaire) -->
+          <div id="postcard-back">
+            <div id="postcard-left">
+              <div id="postcard-message" data-i18n="arrivalLine"></div>
+            </div>
+            <div id="postcard-line-divider"></div>
+            <div id="postcard-right">
+              <div id="postcard-stamp-back">M</div>
+              <form id="postcard-form" autocomplete="off" novalidate></form>
+              <button id="submit-btn" type="button" data-i18n="submitButton" aria-label="Enviar formulario"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 5 : Confirmation -->
+      <div id="phase-confirmation">
+        <p id="confirmation-text" data-i18n="confirmationLine"></p>
+        <p id="tracking-number"></p>
+        <div id="confirmation-buttons">
+          <a id="presave-btn" href="#" target="_blank" rel="noopener noreferrer" data-i18n="presaveButtonText"></a>
+          <button id="share-btn" type="button" data-i18n="shareButtonText"></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
