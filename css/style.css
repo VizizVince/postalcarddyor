@@ -1,0 +1,762 @@
+/* ============================================
+   STYLE.CSS — MANDRAGORA "Jugo De Diamantes"
+   Feuille de styles principale du site
+
+   Architecture : viewport sticky + scroll-driven animations.
+   Tous les éléments sont empilés en position absolute dans le viewport.
+   Leur visibilité est contrôlée par JavaScript via opacity/visibility.
+   ============================================ */
+
+/* --- RESET MINIMAL --- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* --- VARIABLES CSS ---
+   Synchroniser avec config.js → CONFIG.colors et CONFIG.fonts
+   Si vous modifiez les couleurs dans config.js, mettez aussi à jour ici. */
+:root {
+  --bg: #0A0A0A;
+  --text: #E8E4DE;
+  --accent: #8B1A1A;
+  --letter: #FFFFFF;
+  --topo: #373737;
+  --topo-light: #4B4B4B;
+  --font-display: 'Playfair Display', serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-hand: 'Caveat', cursive;
+  /* Carte postale */
+  --postcard-bg: #f5f0e8;
+  --postcard-border: #d4cfc5;
+  --postcard-divider: #c0b8a8;
+  --postcard-text: #2a2a2a;
+  --postcard-label: #888;
+  --postcard-input: #1a1a1a;
+}
+
+/* --- BASE ---
+   IMPORTANT : pas de overflow-x: hidden sur html/body,
+   sinon position: sticky est cassé dans certains navigateurs.
+   Le viewport gère son propre overflow: hidden. */
+html {
+  background-color: var(--bg);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- SCROLL CONTAINER ---
+   Rail de scroll (500vh) — le scroll pilote les animations via ScrollTrigger */
+#scroll-container {
+  height: 500vh;
+  overflow-x: clip;
+}
+
+/* --- VIEWPORT STICKY ---
+   Reste collé en haut pendant que le scroll progresse */
+#viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg);
+}
+
+/* --- GRAIN FILMIQUE ---
+   Overlay permanent, animé, subtil — ne bloque pas les interactions */
+#viewport::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  animation: grain 0.5s steps(6) infinite;
+  will-change: transform;
+}
+
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -15%); }
+  40% { transform: translate(-5%, 15%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 10%); }
+  80% { transform: translate(3%, -15%); }
+  90% { transform: translate(-10%, 5%); }
+}
+
+/* --- CURSEUR CUSTOM (desktop uniquement) ---
+   Réticule rouge SVG */
+@media (hover: hover) {
+  body {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='2' x2='12' y2='10' stroke='%238B1A1A' stroke-width='1'/%3E%3Cline x1='12' y1='14' x2='12' y2='22' stroke='%238B1A1A' stroke-width='1'/%3E%3Cline x1='2' y1='12' x2='10' y2='12' stroke='%238B1A1A' stroke-width='1'/%3E%3Cline x1='14' y1='12' x2='22' y2='12' stroke='%238B1A1A' stroke-width='1'/%3E%3Ccircle cx='12' cy='12' r='3' fill='none' stroke='%238B1A1A' stroke-width='0.5'/%3E%3C/svg%3E") 12 12, crosshair;
+  }
+  button, a, input, textarea, select, label { cursor: pointer; }
+  input, textarea { cursor: text; }
+}
+
+/* --- TOGGLES (langue et audio) ---
+   Fixés au-dessus de tout, style discret */
+#lang-toggle,
+#audio-toggle {
+  position: fixed;
+  z-index: 10000;
+  top: 20px;
+  background: none;
+  border: 1px solid var(--text);
+  border-radius: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+  touch-action: manipulation;
+}
+
+#lang-toggle:hover,
+#audio-toggle:hover {
+  opacity: 1;
+}
+
+#lang-toggle { left: 20px; }
+#audio-toggle { right: 20px; }
+
+
+/* ============================================
+   PHASE 1 — INTRO (typewriter)
+   ============================================ */
+
+#phase-intro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10%;
+  z-index: 20;
+  background-color: var(--bg);
+}
+
+#intro-text {
+  font-family: var(--font-mono);
+  font-size: clamp(16px, 3vw, 22px);
+  letter-spacing: 1px;
+  line-height: 1.6;
+  position: relative;
+  display: inline-block;
+}
+
+#intro-text .char {
+  opacity: 0;
+  display: inline-block;
+}
+
+#intro-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background-color: var(--text);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursorBlink 1s steps(1) infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+
+/* ============================================
+   PHASE 2 — CARTE TOPOGRAPHIQUE + LETTRE + TEXTES NARRATIFS
+   ============================================ */
+
+/* Canvas topographique — couvre tout le viewport */
+#topo-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Fond table (phase 3-4) — apparaît progressivement */
+#table-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background-color: #111111;
+  /* Grain de texture subtil sur la table */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 64px 64px;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* La lettre — UN SEUL élément, centré, qui évolue pendant toutes les phases */
+#letter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 50px;
+  background-image: url('../assets/images/carte.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  border-radius: 2px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  z-index: 15;
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform, width, height, opacity;
+  overflow: hidden;
+}
+
+/* Cachet rouge en bas à droite — masqué (visuel carte.jpeg) */
+#letter-seal {
+  display: none;
+}
+
+/* Tampon supplémentaire — masqué (visuel carte.jpeg) */
+#letter::before {
+  display: none;
+}
+
+/* Coin corné — désactivé (visuel carte.jpeg) */
+#letter.has-fold {
+  /* Ne pas écraser le background-image de carte.jpeg */
+}
+
+/* Textes narratifs du voyage */
+#journey-texts {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+#journey-texts .journey-text {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text);
+  opacity: 0;
+  max-width: 300px;
+  line-height: 1.5;
+  clip-path: inset(0 100% 0 0);
+}
+
+/* Positionnement varié des 3 textes narratifs */
+#journey-texts .journey-text:nth-child(1) {
+  left: 8%;
+  top: 30%;
+}
+
+#journey-texts .journey-text:nth-child(2) {
+  right: 8%;
+  top: 45%;
+  text-align: right;
+}
+
+#journey-texts .journey-text:nth-child(3) {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 65%;
+  text-align: center;
+}
+
+/* Diamants lumineux (étoiles filantes) */
+#light-points-container {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.light-point {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background-color: var(--letter);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* Forme diamant via rotation 45° */
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* Traînée de l'étoile filante — direction dynamique via --trail-angle */
+.light-point::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(to left, var(--letter), transparent);
+  transform-origin: 0% 50%;
+  transform: translate(0, -50%) rotate(var(--trail-angle, 180deg));
+  opacity: 0.6;
+}
+
+
+/* ============================================
+   PHASE 3 — ARRIVÉE (texte d'arrivée)
+   ============================================ */
+
+#arrival-text {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: clamp(14px, 2.5vw, 20px);
+  letter-spacing: 1px;
+  color: var(--text);
+  opacity: 0;
+  text-align: center;
+  max-width: 80%;
+  z-index: 16;
+  pointer-events: none;
+}
+
+
+/* ============================================
+   PHASE 4 — FORMULAIRE CARTE POSTALE
+   ============================================ */
+
+/* Carte postale — centrée dans le viewport */
+#postcard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90vw, 600px);
+  height: min(65vw, 380px);
+  z-index: 18;
+  perspective: 1200px;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Conteneur interne — flip 3D */
+#postcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Quand la carte est retournée */
+#postcard.flipped #postcard-inner {
+  transform: rotateY(180deg);
+}
+
+/* Faces avant et arrière — backface caché */
+#postcard-front,
+#postcard-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* --- FACE AVANT --- */
+#postcard-front {
+  background-image: url('../assets/images/carte.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Masquer le contenu texte sur la face avant (remplacé par l'image) */
+#postcard-front-art {
+  display: none;
+}
+
+#postcard-title {
+  display: none;
+}
+
+#postcard-artist {
+  display: none;
+}
+
+/* Timbre face avant — masqué (l'image fait office de visuel complet) */
+#postcard-stamp-front {
+  display: none;
+}
+
+/* --- FACE ARRIÈRE (formulaire carte postale) --- */
+#postcard-back {
+  background: var(--postcard-bg);
+  border: 1px solid var(--postcard-border);
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: row;
+}
+
+/* Ligne verticale séparatrice */
+#postcard-line-divider {
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: 50%;
+  width: 1px;
+  background-color: var(--postcard-divider);
+}
+
+/* Moitié gauche — message décoratif */
+#postcard-left {
+  width: 50%;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#postcard-message {
+  font-family: var(--font-hand);
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--postcard-text);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Moitié droite — formulaire */
+#postcard-right {
+  width: 50%;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+}
+
+/* Timbre face arrière */
+#postcard-stamp-back {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 42px;
+  border: 1.5px dashed var(--postcard-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--postcard-divider);
+}
+
+/* Champs du formulaire */
+#postcard-form .form-field {
+  position: relative;
+  margin-bottom: 2px;
+}
+
+#postcard-form .form-field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--postcard-label);
+  margin-bottom: 1px;
+}
+
+#postcard-form .form-field input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px dashed var(--postcard-divider);
+  background: transparent;
+  font-family: var(--font-hand);
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--postcard-input);
+  padding: 4px 0;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#postcard-form .form-field input:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--postcard-input);
+}
+
+#postcard-form .form-field input::placeholder {
+  color: var(--postcard-divider);
+  font-family: var(--font-hand);
+}
+
+/* Champ en erreur */
+#postcard-form .form-field.field-error input {
+  border-bottom-color: var(--accent);
+  border-bottom-style: solid;
+}
+
+/* Bouton envoi */
+#submit-btn {
+  margin-top: 8px;
+  padding: 8px 24px;
+  background: none;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#submit-btn:hover {
+  background-color: var(--accent);
+  color: var(--letter);
+  transform: scale(1.02);
+}
+
+#submit-btn:active {
+  transform: scale(0.98);
+}
+
+#submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* État loading du bouton */
+#submit-btn.loading {
+  pointer-events: none;
+  color: transparent;
+}
+
+#submit-btn.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ============================================
+   PHASE 5 — CONFIRMATION
+   ============================================ */
+
+#phase-confirmation {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 0 10%;
+  z-index: 20;
+  opacity: 0;
+  visibility: hidden;
+}
+
+#confirmation-text {
+  font-family: var(--font-mono);
+  font-size: clamp(18px, 3.5vw, 28px);
+  color: var(--text);
+  letter-spacing: 2px;
+  text-align: center;
+  opacity: 0;
+}
+
+#tracking-number {
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 1.5vw, 14px);
+  color: var(--text);
+  opacity: 0;
+  letter-spacing: 3px;
+}
+
+#confirmation-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  opacity: 0;
+}
+
+#presave-btn,
+#share-btn {
+  display: inline-block;
+  padding: 10px 28px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--text);
+  color: var(--text);
+  background: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+}
+
+#presave-btn:hover,
+#share-btn:hover {
+  background-color: var(--text);
+  color: var(--bg);
+}
+
+
+/* ============================================
+   MESSAGE D'ERREUR FORMULAIRE
+   ============================================ */
+
+.form-error-msg {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  text-align: right;
+  margin-top: 4px;
+  letter-spacing: 1px;
+  animation: fadeInError 0.3s ease;
+}
+
+@keyframes fadeInError {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Feedback copie */
+#share-btn.copy-success {
+  border-color: var(--text);
+  opacity: 0.7;
+}
+
+
+/* ============================================
+   ACCESSIBILITÉ
+   ============================================ */
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+*:focus {
+  outline: none;
+}
+
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Lettre plus petite sur mobile */
+  #letter {
+    width: 60px;
+    height: 40px;
+  }
+
+  /* Textes narratifs plus petits */
+  #journey-texts .journey-text {
+    font-size: 12px;
+    max-width: 200px;
+  }
+
+  /* Carte postale plein écran portrait */
+  #postcard {
+    width: 92vw;
+    height: auto;
+    min-height: 480px;
+  }
+
+  #postcard-back {
+    flex-direction: column;
+  }
+
+  #postcard-line-divider {
+    top: auto;
+    bottom: auto;
+    left: 8%;
+    right: 8%;
+    width: auto;
+    height: 1px;
+    position: relative;
+    margin: 0;
+  }
+
+  #postcard-left,
+  #postcard-right {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  #postcard-left {
+    min-height: 80px;
+  }
+
+  #postcard-stamp-front {
+    width: 30px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  #postcard-stamp-back {
+    width: 28px;
+    height: 34px;
+    font-size: 13px;
+  }
+
+  /* Phase 5 — boutons en colonne */
+  #confirmation-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+}
